@@ -1,75 +1,119 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useAudioPlayer } from 'expo-audio';
+import * as Haptics from 'expo-haptics';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Button, StyleSheet, TextInput, View } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const audioSource = import('../../assets/sounds/alarm.mp3')
 
-export default function HomeScreen() {
+
+export default function App() {
+  const [seconds, setSeconds] = useState(60); // tempo inicial: 1 minuto
+  const [initialTime, setInitialTime] = useState(60); // tempo inicial: 1 minuto
+  const [isRunning, setIsRunning] = useState(false);
+  const intervalRef = useRef<number | null>(0);
+  const player = useAudioPlayer(audioSource)
+
+
+  const resetTimer = useCallback(() => {
+    clearInterval(intervalRef.current);
+    setSeconds(initialTime);
+    setIsRunning(false);
+  }, [initialTime]);
+
+  useEffect(() => {
+    if (isRunning) {
+      intervalRef.current = setInterval(() => {
+        setSeconds((prev) => {
+          if (prev === 1) {
+            clearInterval(intervalRef.current);
+            setIsRunning(false);
+            triggerAlert();
+            return 0;
+          } 
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(intervalRef.current);
+    }
+
+    return () => clearInterval(intervalRef.current);
+  }, [isRunning, resetTimer]);
+
+
+
+  const handleChangeTimer = (text: string) => {
+    const value = parseInt(text);
+    if (isNaN(value)) {
+      setInitialTime(0);
+      setSeconds(0);
+    } else {
+      setInitialTime(value);
+      setSeconds(value);
+    }
+  };
+
+  const triggerAlert = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
+    try {
+      player.play()
+    } catch (error) {
+      console.error('Erro ao tocar o som:', error);
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <View style={styles.timerContainer}>
+
+      <TextInput
+        style={styles.input}
+        keyboardType="numeric"
+        value={seconds.toString()}
+        onChangeText={handleChangeTimer}
+      />
+      </View>
+      <View style={styles.buttonContainer}>
+      <Button
+        title={isRunning ? 'Pause' : 'Start'}
+        onPress={() => setIsRunning((prev) => !prev)}
+      />
+      <Button title="Reset" onPress={resetTimer} />
+      </View>
+      
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  timer: {
+    fontSize: 48,
+    marginBottom: 20,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  input: {
+    fontSize: 48,
+    textAlign: 'center',
+    color: '#09f'
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  timerContainer: {
+    marginBottom: 20,
+    width: 300,
+    height: 300,
+    textAlign: 'center',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: '100%',
+    borderWidth: 10,
+    borderColor: '#09f',
   },
 });
