@@ -1,5 +1,6 @@
 import { Phase, WorkoutConfig } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
@@ -23,6 +24,19 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
 
   const currentPhaseTime = currentPhase === 'run' ? config.runTime : config.walkTime;
   const progress = ((currentPhaseTime - timeRemaining) / currentPhaseTime);
+
+  const sendTimerNotification = async () => {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "⏱ Tempo Encerrado!",
+        body: "Seu treino terminou, hora de descansar.",
+        sound: "default", // Som padrão
+        vibrate: [0, 1000], // vibração: 1 segundo
+      },
+      trigger: null, // null = notificação imediata
+    });
+  };
+  
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -61,6 +75,7 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
         setTimeRemaining((prev) => {
           if (prev <= 1) {
             Vibration.vibrate();
+            sendTimerNotification();
             if (currentPhase === 'run') {
               setCurrentPhase('walk');
               return config.walkTime;
