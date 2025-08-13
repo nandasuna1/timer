@@ -1,17 +1,26 @@
 import { Phase, WorkoutConfig } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
 import * as Notifications from "expo-notifications";
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
-
-
 
 interface IntervalTimerProps {
   config: WorkoutConfig;
   onEndWorkout: () => void;
   onBackToConfig: () => void;
 }
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: IntervalTimerProps) {
   const [currentRound, setCurrentRound] = useState(1);
@@ -20,22 +29,49 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
+  const [notification, setNotification] = useState<Notifications.Notification | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
+
+    if (Platform.OS === 'android') {
+      Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
+    }
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }, []);
+
+
   const intervalRef = useRef<number | null>(null);
 
   const currentPhaseTime = currentPhase === 'run' ? config.runTime : config.walkTime;
   const progress = ((currentPhaseTime - timeRemaining) / currentPhaseTime);
 
-  const sendTimerNotification = async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "⏱ Tempo Encerrado!",
-        body: "Seu treino terminou, hora de descansar.",
-        sound: "default", // Som padrão
-        vibrate: [0, 1000], // vibração: 1 segundo
-      },
-      trigger: null, // null = notificação imediata
-    });
-  };
+  // const sendTimerNotification = async () => {
+  //   await Notifications.scheduleNotificationAsync({
+  //     content: {
+  //       title: "⏱ Tempo Encerrado!",
+  //       body: "Seu treino terminou, hora de descansar.",
+  //       sound: "default", // Som padrão
+  //       vibrate: [0, 1000], // vibração: 1 segundo
+  //     },
+  //     trigger: null, // null = notificação imediata
+  //   });
+  // };
   
 
   const formatTime = (seconds: number) => {
@@ -75,7 +111,7 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
         setTimeRemaining((prev) => {
           if (prev <= 1) {
             Vibration.vibrate();
-            sendTimerNotification();
+            schedulePushNotification(currentPhase === 'run');
             if (currentPhase === 'run') {
               setCurrentPhase('walk');
               return config.walkTime;
@@ -245,3 +281,63 @@ const styles = StyleSheet.create({
 
   }
 });
+
+async function schedulePushNotification(isRun: boolean) {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: isRun ? "RUN!" : "WALK!",
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 2,
+    },
+  });
+}
+
+async function registerForPushNotificationsAsync() {
+  let token;
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('myNotificationChannel', {
+      name: 'A channel is needed for the permissions prompt to appear',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+
+  if (Device.isDevice) {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      alert('Failed to get push token for push notification!');
+      return;
+    }
+    // Learn more about projectId:
+    // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
+    // EAS projectId is used here.
+    try {
+      const projectId =
+        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+      if (!projectId) {
+        throw new Error('Project ID not found');
+      }
+      token = (
+        await Notifications.getExpoPushTokenAsync({
+          projectId,
+        })
+      ).data;
+      console.log(token);
+    } catch (e) {
+      token = `${e}`;
+    }
+  } else {
+    alert('Must use physical device for Push Notifications');
+  }
+
+  return token;
+}
