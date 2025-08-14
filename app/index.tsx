@@ -1,6 +1,5 @@
 import * as Notifications from "expo-notifications";
 import { useRouter } from 'expo-router';
-import { View } from 'react-native';
 import IntervalConfig from '../components/IntervalConfig';
 import { WorkoutConfig } from '../types/workout';
 
@@ -30,8 +29,6 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      <IntervalConfig onStartWorkout={handleStartWorkout} />
-    </View>
+    <IntervalConfig onStartWorkout={handleStartWorkout} />
   );
 }

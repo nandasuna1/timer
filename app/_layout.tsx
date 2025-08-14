@@ -4,7 +4,22 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
+import { KeyboardWrapper } from '@/components/KeyboardWrapper';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { PropsWithChildren } from 'react';
+import { StyleSheet } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+
+function AppWrapper({ children }: PropsWithChildren) {
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
+      <KeyboardWrapper>
+        {children}
+      </KeyboardWrapper>
+    </SafeAreaView>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -18,9 +33,20 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack screenOptions={{headerShown: false}}  />
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <AppWrapper>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack screenOptions={{headerShown: false}}>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+      </AppWrapper>
+    </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  flex: { flex: 1 },
+});

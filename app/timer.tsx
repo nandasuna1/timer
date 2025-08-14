@@ -1,5 +1,4 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { View } from 'react-native';
 import { IntervalTimer } from '../components/IntervalTimer';
 
 export default function TimerScreen() {
@@ -16,12 +15,10 @@ export default function TimerScreen() {
   const handleBackToConfig = () => router.back();
 
   return (
-    <View style={{ flex: 1 }}>
-      <IntervalTimer
-        config={config}
-        onEndWorkout={handleEndWorkout}
-        onBackToConfig={handleBackToConfig}
-      />
-    </View>
+    <IntervalTimer
+      config={config}
+      onEndWorkout={handleEndWorkout}
+      onBackToConfig={handleBackToConfig}
+    />
   );
 }

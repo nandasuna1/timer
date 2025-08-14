@@ -37,10 +37,15 @@ export default function IntervalConfig({ onStartWorkout }: IntervalConfigProps) 
   const totalSeconds = totalTime % 60;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.container} 
+    contentContainerStyle={{ display: 'flex', flexDirection: 'column', gap: 20}} 
+    >
+
       <View style={styles.header}>
-        <Timer size={48}  />
-        <Text style={styles.title}>Interval Runner</Text>
+        <View style={styles.headerTitle}>
+          <Timer size={48}  />
+          <Text style={styles.title}>Interval Runner</Text>
+        </View>
         <Text style={styles.subtitle}>Configure your running intervals</Text>
       </View>
 
@@ -72,7 +77,7 @@ export default function IntervalConfig({ onStartWorkout }: IntervalConfigProps) 
             />
           </View>
         </View>
-        <Text style={styles.timerPreview}>{formatTime(runMinutes, runSeconds)}</Text>
+        {/* <Text style={styles.timerPreview}>{formatTime(runMinutes, runSeconds)}</Text> */}
       </View>
 
       {/* Walking Time */}
@@ -103,7 +108,7 @@ export default function IntervalConfig({ onStartWorkout }: IntervalConfigProps) 
             />
           </View>
         </View>
-        <Text style={styles.timerPreview}>{formatTime(walkMinutes, walkSeconds)}</Text>
+        {/* <Text style={styles.timerPreview}>{formatTime(walkMinutes, walkSeconds)}</Text> */}
       </View>
 
       {/* Rounds */}
@@ -112,7 +117,7 @@ export default function IntervalConfig({ onStartWorkout }: IntervalConfigProps) 
         <TextInput
           keyboardType="numeric"
           value={rounds.toString()}
-          onChangeText={(v) => setRounds(parseInt(v) || 1)}
+          onChangeText={(v) => setRounds(parseInt(v) || 0)}
           style={[styles.input, { alignSelf: 'center', fontSize: 20 }]}
         />
       </View>
@@ -144,6 +149,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   header: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerTitle: {
+    display: 'flex',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
