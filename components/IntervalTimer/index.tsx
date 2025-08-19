@@ -2,9 +2,16 @@ import { Phase, WorkoutConfig } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from "expo-notifications";
+import * as Notifications from 'expo-notifications';
 import React, { useEffect, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, Vibration, View } from 'react-native';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from 'react-native';
 import { ProgressBar } from 'react-native-paper';
 
 interface IntervalTimerProps {
@@ -22,7 +29,11 @@ Notifications.setNotificationHandler({
   }),
 });
 
-export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: IntervalTimerProps) {
+export function IntervalTimer({
+  config,
+  onEndWorkout,
+  onBackToConfig,
+}: IntervalTimerProps) {
   const [currentRound, setCurrentRound] = useState(1);
   const [currentPhase, setCurrentPhase] = useState<Phase>('run');
   const [timeRemaining, setTimeRemaining] = useState(config.runTime);
@@ -30,24 +41,35 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
   const [isPaused, setIsPaused] = useState(false);
 
   const [expoPushToken, setExpoPushToken] = useState('');
-  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>([]);
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>(
-    undefined
+  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>(
+    [],
   );
+  const [notification, setNotification] = useState<
+    Notifications.Notification | undefined
+  >(undefined);
 
   useEffect(() => {
-    registerForPushNotificationsAsync().then(token => token && setExpoPushToken(token));
+    registerForPushNotificationsAsync()
+    .then(
+      token => token && setExpoPushToken(token),
+    );
 
     if (Platform.OS === 'android') {
-      Notifications.getNotificationChannelsAsync().then(value => setChannels(value ?? []));
+      Notifications.getNotificationChannelsAsync()
+      .then(value =>
+        setChannels(value ?? []),
+      );
     }
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      setNotification(notification);
-    });
+    const notificationListener = Notifications.addNotificationReceivedListener(
+      notification => {
+        setNotification(notification);
+      },
+    );
 
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log(response);
-    });
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener(response => {
+        console.log(response);
+      });
 
     return () => {
       notificationListener.remove();
@@ -55,24 +77,12 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
     };
   }, []);
 
-
   const intervalRef = useRef<number | null>(null);
 
-  const currentPhaseTime = currentPhase === 'run' ? config.runTime : config.walkTime;
-  const progress = ((currentPhaseTime - timeRemaining) / currentPhaseTime);
+  const currentPhaseTime =
+    currentPhase === 'run' ? config.runTime : config.walkTime;
+  const progress = (currentPhaseTime - timeRemaining) / currentPhaseTime;
 
-  // const sendTimerNotification = async () => {
-  //   await Notifications.scheduleNotificationAsync({
-  //     content: {
-  //       title: "⏱ Tempo Encerrado!",
-  //       body: "Seu treino terminou, hora de descansar.",
-  //       sound: "default", // Som padrão
-  //       vibrate: [0, 1000], // vibração: 1 segundo
-  //     },
-  //     trigger: null, // null = notificação imediata
-  //   });
-  // };
-  
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -108,7 +118,7 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
   useEffect(() => {
     if (isRunning && timeRemaining > 0) {
       intervalRef.current = setInterval(() => {
-        setTimeRemaining((prev) => {
+        setTimeRemaining(prev => {
           if (prev <= 1) {
             Vibration.vibrate();
             schedulePushNotification(currentPhase === 'run');
@@ -117,7 +127,7 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
               return config.walkTime;
             } else {
               if (currentRound < config.rounds) {
-                setCurrentRound((r) => r + 1);
+                setCurrentRound(r => r + 1);
                 setCurrentPhase('run');
                 return config.runTime;
               } else {
@@ -150,7 +160,9 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
 
         <TouchableOpacity style={styles.button} onPress={onBackToConfig}>
           <Ionicons name="arrow-back" size={20} color="#fff" />
-          <Text style={[styles.buttonText, { color: '#fff' }]}>New Workout</Text>
+          <Text style={[styles.buttonText, { color: '#fff' }]}>
+            New Workout
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -158,27 +170,48 @@ export function IntervalTimer({ config, onEndWorkout, onBackToConfig }: Interval
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onBackToConfig} style={{display: 'flex', flexDirection: 'row', gap: 5}} > 
+      <TouchableOpacity
+        onPress={onBackToConfig}
+        style={{ display: 'flex', flexDirection: 'row', gap: 5 }}
+      >
         <Ionicons name="arrow-back" size={24} color="#000" />
         <Text style={styles.backText}>Back to Config</Text>
       </TouchableOpacity>
 
-      <Text style={styles.roundText}>Round {currentRound} of {config.rounds}</Text>
-      <Text style={[styles.phaseText, currentPhase === 'run' ? styles.run : styles.walk]}>
+      <Text style={styles.roundText}>
+        Round {currentRound} of {config.rounds}
+      </Text>
+      <Text
+        style={[
+          styles.phaseText,
+          currentPhase === 'run' ? styles.run : styles.walk,
+        ]}
+      >
         {currentPhase === 'run' ? 'RUN!' : 'WALK'}
       </Text>
 
       <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
 
-      <ProgressBar progress={progress} color={currentPhase === 'run' ? 'green' : 'blue'} style={styles.progress} />
+      <ProgressBar
+        progress={progress}
+        color={currentPhase === 'run' ? 'green' : 'blue'}
+        style={styles.progress}
+      />
 
       <View style={styles.controls}>
         <TouchableOpacity onPress={resetWorkout} style={styles.buttonOutline}>
           <Ionicons name="refresh" size={24} color="#000" />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={isRunning ? pauseTimer : startTimer} style={styles.button}>
-          <Ionicons name={isRunning ? 'pause-outline' : 'play-outline'} size={24} color="#fff" />
+        <TouchableOpacity
+          onPress={isRunning ? pauseTimer : startTimer}
+          style={styles.button}
+        >
+          <Ionicons
+            name={isRunning ? 'pause-outline' : 'play-outline'}
+            size={24}
+            color="#fff"
+          />
         </TouchableOpacity>
 
         <TouchableOpacity onPress={stopWorkout} style={styles.stopButton}>
@@ -269,7 +302,7 @@ const styles = StyleSheet.create({
   pausedText: {
     textAlign: 'center',
     fontSize: 14,
-    color: 'gray'
+    color: 'gray',
   },
   completedContainer: {
     padding: 24,
@@ -278,14 +311,13 @@ const styles = StyleSheet.create({
     gap: 20,
     textAlign: 'center',
     backgroundColor: '#f9fafb',
-
-  }
+  },
 });
 
 async function schedulePushNotification(isRun: boolean) {
   await Notifications.scheduleNotificationAsync({
     content: {
-      title: isRun ? "RUN!" : "WALK!",
+      title: isRun ? 'RUN!' : 'WALK!',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -307,7 +339,8 @@ async function registerForPushNotificationsAsync() {
   }
 
   if (Device.isDevice) {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== 'granted') {
       const { status } = await Notifications.requestPermissionsAsync();
@@ -322,7 +355,8 @@ async function registerForPushNotificationsAsync() {
     // EAS projectId is used here.
     try {
       const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
+        Constants?.expoConfig?.extra?.eas?.projectId ??
+        Constants?.easConfig?.projectId;
       if (!projectId) {
         throw new Error('Project ID not found');
       }

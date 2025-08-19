@@ -4,8 +4,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
-import { KeyboardWrapper } from '@/components/KeyboardWrapper';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { KeyboardWrapper } from '@/wrappers/KeyboardWrapper';
 import { PropsWithChildren } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
