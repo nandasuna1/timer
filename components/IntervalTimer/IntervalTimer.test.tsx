@@ -91,3 +91,7 @@
 //     // Não chama onEndWorkout ainda, só quando para manualmente
 //   });
 // });
+
+describe('IntervalTimer', () => {
+  it.todo('renders correctly');
+});

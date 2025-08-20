@@ -1,18 +1,16 @@
 import { Phase, WorkoutConfig } from '@/types/workout';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
-import * as Device from 'expo-device';
+
 import * as Notifications from 'expo-notifications';
-import React, { useEffect, useRef, useState } from 'react';
+import React from 'react';
 import {
-  Platform,
-  StyleSheet,
   Text,
   TouchableOpacity,
-  Vibration,
-  View,
+  View
 } from 'react-native';
 import { ProgressBar } from 'react-native-paper';
+import { styles } from './style';
+import { useController } from './useController';
 
 interface IntervalTimerProps {
   config: WorkoutConfig;
@@ -34,118 +32,20 @@ export function IntervalTimer({
   onEndWorkout,
   onBackToConfig,
 }: IntervalTimerProps) {
-  const [currentRound, setCurrentRound] = useState(1);
-  const [currentPhase, setCurrentPhase] = useState<Phase>('run');
-  const [timeRemaining, setTimeRemaining] = useState(config.runTime);
-  const [isRunning, setIsRunning] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
 
-  const [expoPushToken, setExpoPushToken] = useState('');
-  const [channels, setChannels] = useState<Notifications.NotificationChannel[]>(
-    [],
-  );
-  const [notification, setNotification] = useState<
-    Notifications.Notification | undefined
-  >(undefined);
-
-  useEffect(() => {
-    registerForPushNotificationsAsync()
-    .then(
-      token => token && setExpoPushToken(token),
-    );
-
-    if (Platform.OS === 'android') {
-      Notifications.getNotificationChannelsAsync()
-      .then(value =>
-        setChannels(value ?? []),
-      );
-    }
-    const notificationListener = Notifications.addNotificationReceivedListener(
-      notification => {
-        setNotification(notification);
-      },
-    );
-
-    const responseListener =
-      Notifications.addNotificationResponseReceivedListener(response => {
-        console.log(response);
-      });
-
-    return () => {
-      notificationListener.remove();
-      responseListener.remove();
-    };
-  }, []);
-
-  const intervalRef = useRef<number | null>(null);
-
-  const currentPhaseTime =
-    currentPhase === 'run' ? config.runTime : config.walkTime;
-  const progress = (currentPhaseTime - timeRemaining) / currentPhaseTime;
-
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const startTimer = () => {
-    setIsRunning(true);
-    setIsPaused(false);
-  };
-
-  const pauseTimer = () => {
-    setIsRunning(false);
-    setIsPaused(true);
-  };
-
-  const stopWorkout = () => {
-    setIsRunning(false);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    onEndWorkout();
-  };
-
-  const resetWorkout = () => {
-    setIsRunning(false);
-    setIsPaused(false);
-    setCurrentRound(1);
-    setCurrentPhase('run');
-    setTimeRemaining(config.runTime);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-  };
-
-  useEffect(() => {
-    if (isRunning && timeRemaining > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            Vibration.vibrate();
-            schedulePushNotification(currentPhase === 'run');
-            if (currentPhase === 'run') {
-              setCurrentPhase('walk');
-              return config.walkTime;
-            } else {
-              if (currentRound < config.rounds) {
-                setCurrentRound(r => r + 1);
-                setCurrentPhase('run');
-                return config.runTime;
-              } else {
-                setCurrentPhase('complete');
-                setIsRunning(false);
-                return 0;
-              }
-            }
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [isRunning, timeRemaining, currentPhase, currentRound, config]);
+  const {
+    currentRound,
+    currentPhase,
+    formatTime,
+    timeRemaining,
+    progress,
+    isRunning,
+    isPaused,
+    resetWorkout,
+    startTimer,
+    pauseTimer,
+    stopWorkout,
+  } = useController({config, onEndWorkout});
 
   if (currentPhase === 'complete') {
     return (
@@ -184,17 +84,17 @@ export function IntervalTimer({
       <Text
         style={[
           styles.phaseText,
-          currentPhase === 'run' ? styles.run : styles.walk,
+          currentPhase === Phase.RUN ? styles.run : styles.walk,
         ]}
       >
-        {currentPhase === 'run' ? 'RUN!' : 'WALK'}
+        {currentPhase === Phase.RUN ? 'RUN!' : 'WALK'}
       </Text>
 
       <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
 
       <ProgressBar
         progress={progress}
-        color={currentPhase === 'run' ? 'green' : 'blue'}
+        color={currentPhase === Phase.RUN ? 'green' : 'blue'}
         style={styles.progress}
       />
 
@@ -224,154 +124,4 @@ export function IntervalTimer({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 24,
-    flex: 1,
-    marginTop: 20,
-    backgroundColor: '#f9fafb',
-  },
-  roundText: {
-    textAlign: 'center',
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  phaseText: {
-    textAlign: 'center',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  run: { color: 'green' },
-  walk: { color: 'blue' },
-  timerText: {
-    textAlign: 'center',
-    fontSize: 64,
-    fontVariant: ['tabular-nums'],
-    marginBottom: 16,
-  },
-  progress: {
-    height: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginVertical: 16,
-  },
-  button: {
-    backgroundColor: 'black',
-    borderRadius: 10,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  buttonOutline: {
-    borderColor: '#000',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stopButton: {
-    backgroundColor: '#da2929',
-    borderColor: '#da2929',
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  buttonText: {
-    marginLeft: 8,
-    fontSize: 16,
-  },
-  completeText: {
-    fontSize: 28,
-    textAlign: 'center',
-    marginBottom: 16,
-    fontWeight: 'bold',
-    color: 'green',
-  },
-  backText: {
-    fontSize: 16,
-    marginBottom: 24,
-  },
-  pausedText: {
-    textAlign: 'center',
-    fontSize: 14,
-    color: 'gray',
-  },
-  completedContainer: {
-    padding: 24,
-    flex: 1,
-    marginTop: 20,
-    gap: 20,
-    textAlign: 'center',
-    backgroundColor: '#f9fafb',
-  },
-});
 
-async function schedulePushNotification(isRun: boolean) {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: isRun ? 'RUN!' : 'WALK!',
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 2,
-    },
-  });
-}
-
-async function registerForPushNotificationsAsync() {
-  let token;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('myNotificationChannel', {
-      name: 'A channel is needed for the permissions prompt to appear',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF231F7C',
-    });
-  }
-
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    if (finalStatus !== 'granted') {
-      alert('Failed to get push token for push notification!');
-      return;
-    }
-    // Learn more about projectId:
-    // https://docs.expo.dev/push-notifications/push-notifications-setup/#configure-projectid
-    // EAS projectId is used here.
-    try {
-      const projectId =
-        Constants?.expoConfig?.extra?.eas?.projectId ??
-        Constants?.easConfig?.projectId;
-      if (!projectId) {
-        throw new Error('Project ID not found');
-      }
-      token = (
-        await Notifications.getExpoPushTokenAsync({
-          projectId,
-        })
-      ).data;
-      console.log(token);
-    } catch (e) {
-      token = `${e}`;
-    }
-  } else {
-    alert('Must use physical device for Push Notifications');
-  }
-
-  return token;
-}

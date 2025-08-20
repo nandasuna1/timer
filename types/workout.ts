@@ -5,4 +5,8 @@ export interface WorkoutConfig {
   rounds: number;
 }
 
-export type Phase = 'run' | 'walk' | 'complete';
+export enum Phase {
+  RUN = 'run',
+  WALK = 'walk',
+  COMPLETE = 'complete',
+}

@@ -26,9 +26,6 @@ export const useController = ({ onStartWorkout }: UseControllerProps) => {
       onStartWorkout(config);
     };
   
-    const formatTime = (minutes: number, seconds: number) =>
-      `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  
     const totalTime =
       (runMinutes * 60 + runSeconds + walkMinutes * 60 + walkSeconds) * rounds;
     const totalMinutes = Math.floor(totalTime / 60);
@@ -41,7 +38,6 @@ export const useController = ({ onStartWorkout }: UseControllerProps) => {
         walkSeconds, 
         rounds, 
         handleStart, 
-        formatTime, 
         totalTime, 
         totalMinutes, 
         totalSeconds,
