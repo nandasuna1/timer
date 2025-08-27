@@ -1,4 +1,4 @@
-import { formatTime } from '@/utils/time';
+import { formatTime } from '@/utils/timer';
 import { Play, RotateCcw, Timer } from 'lucide-react-native';
 import React from 'react';
 import {

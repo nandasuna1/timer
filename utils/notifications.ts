@@ -1,3 +1,4 @@
+import { WorkoutConfig } from '@/types/workout';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -13,7 +14,7 @@ export async function schedulePushNotification(isRun: boolean) {
         seconds: 2,
       },
     });
-  }
+}
   
 export async function registerForPushNotificationsAsync() {
     let token;
@@ -64,4 +65,40 @@ export async function registerForPushNotificationsAsync() {
   
     return token;
 }
+
+export async function setupNotifications() {
+    const { status } = await Notifications.requestPermissionsAsync();
+    if (status !== "granted") {
+      alert("Enable notifications for the timer to work!");
+    }
   
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("timer", {
+        name: "Timer",
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: 'default',
+      });
+    }
+}
+  
+export async function scheduleNotification(seconds: number, message?: string) {
+  await Notifications.scheduleNotificationAsync({
+    content: { title: "⏱ Timer", body: message ?? "Time!", sound: true },
+    trigger: { 
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds,
+    },
+  });
+}
+
+export const cancelAllNotifications = async () => {
+  await Notifications.cancelAllScheduledNotificationsAsync();
+};
+
+export const scheduleNotificationInBatch = async ({rounds, runTime, walkTime}: WorkoutConfig) => {
+  for (let i = 0; i < rounds; i++) {
+    const timeToRun = (runTime * (i + 1)) + (walkTime * i);
+    await scheduleNotification(timeToRun);
+    await scheduleNotification(timeToRun + walkTime);
+  }
+}

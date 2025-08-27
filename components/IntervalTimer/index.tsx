@@ -37,7 +37,7 @@ export function IntervalTimer({
     currentRound,
     currentPhase,
     formatTime,
-    timeRemaining,
+    secondsRemainingInCurrentPhase,
     progress,
     isRunning,
     isPaused,
@@ -90,7 +90,7 @@ export function IntervalTimer({
         {currentPhase === Phase.RUN ? 'RUN!' : 'WALK'}
       </Text>
 
-      <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
+      <Text style={styles.timerText}>{formatTime(secondsRemainingInCurrentPhase)}</Text>
 
       <ProgressBar
         progress={progress}
