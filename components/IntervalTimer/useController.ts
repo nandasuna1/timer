@@ -1,3 +1,4 @@
+import { useSettingsContext } from "@/contexts/SettingsContext";
 import { clearTimeStamp, getCurrentTimeStamp, setCurrentTimeStamp } from "@/data/localStorage/activityTimeStamp";
 import { clearTimerState, setCurrentTimerState } from "@/data/localStorage/timerData";
 import { useSound } from "@/hooks/useSound";
@@ -18,7 +19,7 @@ interface IProps {
 
 export const useController = ({ config, onEndWorkout }: IProps) => {
   const { play } = useSound();
-
+  const { notificationsEnabled } = useSettingsContext();
   const [currentRound, setCurrentRound] = useState(1);
   const [currentPhase, setCurrentPhase] = useState<Phase>(Phase.RUN);
   const [secondsRemainingInCurrentPhase, setSecondsRemainingInCurrentPhase] = useState(config.runTime);
@@ -77,7 +78,9 @@ export const useController = ({ config, onEndWorkout }: IProps) => {
     setIsRunning(true);
     setIsPaused(false);
     setCurrentTimeStamp(Date.now())
-    await scheduleNotificationInBatch(config);
+    if (notificationsEnabled) {
+      await scheduleNotificationInBatch(config);
+    }
     await setCurrentTimerState({
       ...config,
       currentPhase,

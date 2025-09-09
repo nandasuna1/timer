@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { IntervalTimer } from '../components/IntervalTimer';
+import { IntervalTimer } from '../../../components/IntervalTimer';
 
 export default function TimerScreen() {
   const router = useRouter();

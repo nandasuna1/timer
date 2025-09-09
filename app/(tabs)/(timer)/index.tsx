@@ -1,7 +1,7 @@
 import * as Notifications from "expo-notifications";
 import { useRouter } from 'expo-router';
-import IntervalConfig from '../components/IntervalConfig';
-import { WorkoutConfig } from '../types/workout';
+import IntervalConfig from '../../../components/IntervalConfig';
+import { WorkoutConfig } from '../../../types/workout';
 
 
 Notifications.setNotificationHandler({

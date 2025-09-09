@@ -1,22 +1,25 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { SettingsProvider } from '@/contexts/SettingsContext';
+import { KeyboardWrapper } from '@/wrappers/KeyboardWrapper';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { KeyboardWrapper } from '@/wrappers/KeyboardWrapper';
 import { PropsWithChildren } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, useColorScheme } from 'react-native';
+import 'react-native-reanimated';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 function AppWrapper({ children }: PropsWithChildren) {
-
   return (
-    <SafeAreaView style={styles.safe} edges={['top', 'bottom', 'left', 'right']}>
-      <KeyboardWrapper>
-        {children}
-      </KeyboardWrapper>
+    <SafeAreaView
+      style={styles.safe}
+      edges={['top', 'bottom', 'left', 'right']}
+    >
+      <KeyboardWrapper>{children}</KeyboardWrapper>
     </SafeAreaView>
   );
 }
@@ -35,12 +38,16 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppWrapper>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack screenOptions={{headerShown: false}}>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
+        <ThemeProvider
+          value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
+        >
+          <SettingsProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
             </Stack>
             <StatusBar style="auto" />
-          </ThemeProvider>
+          </SettingsProvider>
+        </ThemeProvider>
       </AppWrapper>
     </SafeAreaProvider>
   );
