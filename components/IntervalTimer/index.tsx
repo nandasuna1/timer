@@ -14,7 +14,7 @@ import { useController } from './useController';
 
 interface IntervalTimerProps {
   config: WorkoutConfig;
-  onEndWorkout: () => void;
+  onEndWorkout?: () => void;
   onBackToConfig: () => void;
 }
 
@@ -45,7 +45,7 @@ export function IntervalTimer({
     startTimer,
     pauseTimer,
     stopWorkout,
-  } = useController({config, onEndWorkout});
+  } = useController({config, onEndWorkout: onEndWorkout ?? (() => {})});
 
   if (currentPhase === 'complete') {
     return (

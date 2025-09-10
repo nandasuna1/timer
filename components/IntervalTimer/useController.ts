@@ -1,12 +1,21 @@
-import { useSettingsContext } from "@/contexts/SettingsContext";
-import { clearTimeStamp, getCurrentTimeStamp, setCurrentTimeStamp } from "@/data/localStorage/activityTimeStamp";
-import { clearTimerState, setCurrentTimerState } from "@/data/localStorage/timerData";
-import { useSound } from "@/hooks/useSound";
-import { Phase } from "@/types/workout";
-import { cancelAllNotifications, scheduleNotificationInBatch } from "@/utils/notifications";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AppState, Vibration } from "react-native";
-
+import { useSettingsContext } from '@/contexts/SettingsContext';
+import {
+  clearTimeStamp,
+  getCurrentTimeStamp,
+  setCurrentTimeStamp,
+} from '@/data/localStorage/activityTimeStamp';
+import {
+  clearTimerState,
+  setCurrentTimerState,
+} from '@/data/localStorage/timerData';
+import { useSound } from '@/hooks/useSound';
+import { Phase } from '@/types/workout';
+import {
+  cancelAllNotifications,
+  scheduleNotificationInBatch,
+} from '@/utils/notifications';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, Vibration } from 'react-native';
 
 interface IProps {
   config: {
@@ -19,15 +28,15 @@ interface IProps {
 
 export const useController = ({ config, onEndWorkout }: IProps) => {
   const { play } = useSound();
-  const { notificationsEnabled } = useSettingsContext();
+  const { notificationsEnabled, soundEnabled } = useSettingsContext();
   const [currentRound, setCurrentRound] = useState(1);
   const [currentPhase, setCurrentPhase] = useState<Phase>(Phase.RUN);
-  const [secondsRemainingInCurrentPhase, setSecondsRemainingInCurrentPhase] = useState(config.runTime);
+  const [secondsRemainingInCurrentPhase, setSecondsRemainingInCurrentPhase] =
+    useState(config.runTime);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
   const intervalRef = useRef<number | null>(null);
-  
 
   const currentPhaseTime =
     currentPhase === Phase.RUN ? config.runTime : config.walkTime;
@@ -38,20 +47,22 @@ export const useController = ({ config, onEndWorkout }: IProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   // ---- controle de timer ----
   const handlePhaseTransition = useCallback(() => {
     Vibration.vibrate();
-    play();
+    if (soundEnabled) {
+      play();
+    }
 
     if (currentPhase === Phase.RUN) {
       setCurrentPhase(Phase.WALK);
       // schedulePushNotification();
     } else {
       if (currentRound < config.rounds) {
-        setCurrentRound((r) => r + 1);
+        setCurrentRound(r => r + 1);
         setCurrentPhase(Phase.RUN);
         // schedulePushNotification();
       } else {
@@ -60,14 +71,14 @@ export const useController = ({ config, onEndWorkout }: IProps) => {
         onEndWorkout();
       }
     }
-  }, [play, currentPhase, currentRound, config.rounds, onEndWorkout]);
+  }, [play, currentPhase, currentRound, config.rounds, onEndWorkout, soundEnabled]);
 
   const tick = useCallback(() => {
-    setSecondsRemainingInCurrentPhase((prev) => {
-      if (prev <= 1) {
-        return currentPhase === Phase.RUN
-          ? config.walkTime
-          : config.runTime;
+    setSecondsRemainingInCurrentPhase(prev => {
+      if (prev <= 0) {
+        const currentPhaseTime =
+          currentPhase === Phase.RUN ? config.walkTime : config.runTime;
+        return currentPhaseTime;
       }
       return prev - 1;
     });
@@ -77,7 +88,7 @@ export const useController = ({ config, onEndWorkout }: IProps) => {
   const startTimer = async () => {
     setIsRunning(true);
     setIsPaused(false);
-    setCurrentTimeStamp(Date.now())
+    setCurrentTimeStamp(Date.now());
     if (notificationsEnabled) {
       await scheduleNotificationInBatch(config);
     }
@@ -89,7 +100,7 @@ export const useController = ({ config, onEndWorkout }: IProps) => {
     });
   };
 
-  const pauseTimer = async() => {
+  const pauseTimer = async () => {
     cancelAllNotifications();
 
     setIsRunning(false);
@@ -130,62 +141,63 @@ export const useController = ({ config, onEndWorkout }: IProps) => {
   };
 
   // ---- Avançar quando volta do background ----
-  const advanceTimer = useCallback(async (secondsPassed: number) => {
-    let remaining = secondsRemainingInCurrentPhase - secondsPassed;
-    let round = currentRound;
-    let phase = currentPhase;
+  const advanceTimer = useCallback(
+    async (secondsPassed: number) => {
+      let remaining = secondsRemainingInCurrentPhase - secondsPassed;
+      let round = currentRound;
+      let phase = currentPhase;
 
-
-    while (remaining <= 0 && phase !== Phase.COMPLETE) {
-      if (phase === Phase.RUN) {
-        remaining += config.walkTime;
-        phase = Phase.WALK;
-      } else {
-        if (round < config.rounds) {
-          remaining += config.runTime;
-          phase = Phase.RUN;
-          round++;
+      while (remaining <= 0 && phase !== Phase.COMPLETE) {
+        if (phase === Phase.RUN) {
+          remaining += config.walkTime;
+          phase = Phase.WALK;
         } else {
-          phase = Phase.COMPLETE;
-          remaining = 0;
+          if (round < config.rounds) {
+            remaining += config.runTime;
+            phase = Phase.RUN;
+            round++;
+          } else {
+            phase = Phase.COMPLETE;
+            remaining = 0;
+          }
         }
       }
-    }
 
-    setSecondsRemainingInCurrentPhase(Math.max(remaining, 0));
-    setCurrentRound(round);
-    setCurrentPhase(phase);
+      setSecondsRemainingInCurrentPhase(Math.max(remaining, 0));
+      setCurrentRound(round);
+      setCurrentPhase(phase);
 
-    await setCurrentTimerState({
-      ...config,
-      currentPhase: phase,
-      currentRound: round,
-      secondsRemainingInCurrentPhase: Math.max(remaining, 0),
-    });
-    
-  }, [secondsRemainingInCurrentPhase, currentRound, currentPhase, config]);
-
+      await setCurrentTimerState({
+        ...config,
+        currentPhase: phase,
+        currentRound: round,
+        secondsRemainingInCurrentPhase: Math.max(remaining, 0),
+      });
+    },
+    [secondsRemainingInCurrentPhase, currentRound, currentPhase, config],
+  );
 
   useEffect(() => {
-    const subscription = AppState.addEventListener("change", async (nextState) => {
-  
-      if (nextState === "inactive" || nextState === "background") {
-        await setCurrentTimeStamp(Date.now());
-      }
-  
-      if (nextState === "active" && isRunning) {
-        const savedTime = await getCurrentTimeStamp();
-        if (savedTime) {
-          const diff = Math.floor((Date.now() - Number(savedTime)) / 1000);
-          advanceTimer(diff);
-          clearTimeStamp();
+    const subscription = AppState.addEventListener(
+      'change',
+      async nextState => {
+        if (nextState === 'inactive' || nextState === 'background') {
+          await setCurrentTimeStamp(Date.now());
         }
-      }
-    });
-  
+
+        if (nextState === 'active' && isRunning) {
+          const savedTime = await getCurrentTimeStamp();
+          if (savedTime) {
+            const diff = Math.floor((Date.now() - Number(savedTime)) / 1000);
+            advanceTimer(diff);
+            clearTimeStamp();
+          }
+        }
+      },
+    );
+
     return () => subscription.remove();
   }, [isRunning, advanceTimer]);
-  
 
   // ---- Tick normal (quando app aberto) ----
   useEffect(() => {
@@ -202,10 +214,18 @@ export const useController = ({ config, onEndWorkout }: IProps) => {
   useEffect(() => {
     if (secondsRemainingInCurrentPhase === 0 && isRunning) {
       handlePhaseTransition();
-      setSecondsRemainingInCurrentPhase(currentPhase === Phase.RUN ? config.walkTime : config.runTime);
+      setSecondsRemainingInCurrentPhase(
+        currentPhase === Phase.RUN ? config.walkTime : config.runTime,
+      );
     }
-  }, [secondsRemainingInCurrentPhase, isRunning, currentPhase, handlePhaseTransition, config.runTime, config.walkTime]);
-  
+  }, [
+    secondsRemainingInCurrentPhase,
+    isRunning,
+    currentPhase,
+    handlePhaseTransition,
+    config.runTime,
+    config.walkTime,
+  ]);
 
   return {
     currentRound,

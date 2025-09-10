@@ -11,13 +11,11 @@ export default function TimerScreen() {
     rounds: Number(rounds),
   };
 
-  const handleEndWorkout = () => router.replace('/');
   const handleBackToConfig = () => router.back();
 
   return (
     <IntervalTimer
       config={config}
-      onEndWorkout={handleEndWorkout}
       onBackToConfig={handleBackToConfig}
     />
   );

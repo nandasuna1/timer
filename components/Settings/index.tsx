@@ -3,7 +3,12 @@ import { Timer } from 'lucide-react-native';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function Settings() {
-  const { notificationsEnabled, toggleNotifications } = useSettingsContext();
+  const {
+    notificationsEnabled,
+    toggleNotifications,
+    soundEnabled,
+    toggleSound,
+  } = useSettingsContext();
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -13,19 +18,34 @@ export default function Settings() {
         </View>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Send notifications</Text>
-        <Pressable
-          style={[
-            styles.button,
-            { backgroundColor: notificationsEnabled ? 'green' : 'red' },
-          ]}
-          onPress={toggleNotifications}
-        >
-          <Text style={styles.buttonText}>
-            {notificationsEnabled ? 'On' : 'Off'}
-          </Text>
-        </Pressable>
+      <View style={styles.settingsList}>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Send notifications</Text>
+          <Pressable
+            style={[
+              styles.button,
+              { backgroundColor: notificationsEnabled ? 'green' : 'red' },
+            ]}
+            onPress={toggleNotifications}
+          >
+            <Text style={styles.buttonText}>
+              {notificationsEnabled ? 'On' : 'Off'}
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Sound</Text>
+          <Pressable
+            style={[
+              styles.button,
+              { backgroundColor: soundEnabled ? 'green' : 'red' },
+            ]}
+            onPress={toggleSound}
+          >
+            <Text style={styles.buttonText}>{soundEnabled ? 'On' : 'Off'}</Text>
+          </Pressable>
+        </View>
       </View>
     </ScrollView>
   );
@@ -74,5 +94,10 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  settingsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 12,
   },
 });
